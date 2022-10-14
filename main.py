@@ -23,7 +23,6 @@ class MainWindow(QMainWindow):
         """Trigger function to open file dialog
         - create the instance of Settingup
         - set trigger to combobox
-        - garbage collection
         """
         global setupFunctional
 
