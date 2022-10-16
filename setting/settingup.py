@@ -9,9 +9,11 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
 from PySide6.QtWidgets import (QApplication, QComboBox, QGridLayout, QHBoxLayout,
                                QHeaderView, QMainWindow, QMenu, QMenuBar,
                                QPushButton, QSizePolicy, QStatusBar, QTableWidget,
-                               QTableWidgetItem, QWidget, QLineEdit, QAbstractItemView)
+                               QTableWidgetItem, QWidget, QLineEdit, QAbstractItemView,
+                               QMessageBox)
 
 from database.database import DataBase
+
 
 
 class Settingup():
@@ -20,6 +22,22 @@ class Settingup():
 
         db = DataBase(path)
         self.setup_names_of_tables(widget)
+
+    @staticmethod
+    def get_data_record(table_widget: QTableWidget) -> dict:
+        """Get dict data from current row in table widget
+
+        Args:
+            table_widget (QTableWidget): table where locate records, and select a cell
+
+        Returns:
+            dict: full info of record
+        """
+        data = dict()
+        row = table_widget.currentRow()
+        for column in range(table_widget.columnCount()):
+            data[table_widget.horizontalHeaderItem(column).text()] = table_widget.item(row, column).text()
+        return data
 
     @staticmethod
     def _ui_combobox(combo_widget: QComboBox) -> None:
@@ -59,7 +77,16 @@ class Settingup():
         [table_widget.setVerticalHeaderItem(i-1, QTableWidgetItem(str(i-1))) for i in range(2, rows + 2)]
 
     @staticmethod
-    def _clear_table_widget(table_widget: QTableWidget) -> None:
+    def clear_combobox_widget(combobox_widget: QComboBox) -> None:
+        """Make combobox widget like a snow
+
+        Args:
+            combobox_widget (QComboBox): combobox, which will be cleared
+        """
+        combobox_widget.clear()
+    
+    @staticmethod
+    def clear_table_widget(table_widget: QTableWidget) -> None:
         """Make table widget like a snow
 
         Args:
@@ -79,7 +106,7 @@ class Settingup():
         self._ui_combobox(combo_widget)
         combo_widget.addItems(db.name_of_tables)
 
-    def fill_table(self, table_widget: QTableWidget, table: str, query: bool = False) -> None:
+    def fill_table(self, table_widget: QTableWidget, table: str, query: bool = False) -> None | QMessageBox:
         """Fill QTableWidget of existing records or filter records by query and call UI function
 
         Args:
@@ -88,6 +115,14 @@ class Settingup():
             query (bool): recognize who send signal - [combobox, pushbutton[Filter]]. Defaults to False - combobox
         """ 
         content_of_db_table = db.get_content(table)
+
+        # If table empty
+        if content_of_db_table == []:
+            self.clear_table_widget(table_widget)
+            return QMessageBox.information(None, "Information", "There no records in selected table")
+        if content_of_db_table != []:
+            ...
+
         columns = len(content_of_db_table[0])
 
         # Replace content_of_db_table with query
@@ -103,7 +138,7 @@ class Settingup():
             query = ' AND '.join(list_of_conditions)    
             content_of_db_table = db.get_content(table, query)
             
-        self._clear_table_widget(table_widget)
+        self.clear_table_widget(table_widget)
         
         header_of_table = [i[1] for i in db.info[table]['table_info']]
         rows = len(content_of_db_table)
@@ -121,3 +156,16 @@ class Settingup():
         table_widget.resizeColumnsToContents()
         table_widget.horizontalHeader().setStretchLastSection(True)
         
+    def delete_record_ref(self, table_widget: QTableWidget, table: str) -> bool:
+        """Contain a reference to function in database class and fill table after sql operation
+
+        Args:
+            table (str): where delete record
+            record (dict): record's fields
+
+        Returns:
+            bool: status execution
+        """
+        record = self.get_data_record(table_widget)
+        db.delete_record(table, record)
+        self.fill_table(table_widget, table)

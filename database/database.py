@@ -56,6 +56,22 @@ class DataBase():
 
         return self.content
 
+    def delete_record(self, table: str, record: dict) -> bool:
+        """Delete record in opened database
+
+        Args:
+            table (str): where delete record
+            record (dict): record's fields
+
+        Returns:
+            bool: status execution
+        """
+        for tuple_info in self.info[table]['table_info']:
+            if tuple_info[-1] == 1: # If pk == True
+                name_field = tuple_info[1]
+        self.cursor.execute(f"DELETE FROM {table} WHERE {name_field}={record[name_field]}")
+        self.connection.commit()
+
     def __del__(self):
         self.connection.close()
 
