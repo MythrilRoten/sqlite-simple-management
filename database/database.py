@@ -117,10 +117,16 @@ class DataBase():
             self.cursor.execute(query)
             self.connection.commit()
 
-    def create_record(self, table: str, record_data: dict) -> None:
-        fields_arr = [*record_data]
+    def create_record(self, table: str, record: dict) -> None:
+        """Add record in opened database
+
+        Args:
+            table (str): where delete record
+            record (dict): record's fields
+        """
+        fields_arr = [*record]
         fields_str = ", ".join(fields_arr)
-        value_arr = [f"\"{record_data[field]}\"" for field in fields_arr]
+        value_arr = [f"\"{record[field]}\"" for field in fields_arr]
         value_str = ", ".join(value_arr)
         query = f"INSERT INTO {table} ({fields_str}) VALUES ({value_str})"
         print(query)

@@ -149,10 +149,7 @@ class Settingup():
         header_of_table = [i[1] for i in db.info[table]['table_info']]
         rows = len(content_of_db_table)
         
-        print(db.get_last_pk(table))
-        
         self._ui_qtablewidget(table_widget, header_of_table, rows, columns)
-
         
         # Filling table_widget
         for row, record in enumerate(content_of_db_table):
@@ -160,12 +157,12 @@ class Settingup():
                 item = QTableWidgetItem(str(field))
                 if table_widget.horizontalHeaderItem(column).text() == db.get_pk(db.info, table): # ReadOnly Pk
                     item.setFlags(Qt.ItemIsEnabled)
-                    
+                    ######## Insert in add row a new pk id
                     if table_widget.item(1, column) is None:
                         last_pk = QTableWidgetItem(str(db.get_last_pk(table)+1))
                         last_pk.setFlags(Qt.ItemIsEnabled)
                         table_widget.setItem(1, column, last_pk)
-                        
+                    #########
                 table_widget.setItem(row + SYSTEM_ROWS, column, item)
 
         # Clear size recent table and resize
