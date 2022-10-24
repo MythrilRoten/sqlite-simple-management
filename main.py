@@ -18,7 +18,8 @@ class MainWindow(QMainWindow):
 
         self.ui.action_opendatabase.triggered.connect(self.open_db_file)
         self.ui.comboBox_tables.currentTextChanged.connect(lambda name_of_table: setupFunctional.fill_table(self.ui.tableWidget_table, name_of_table))
-        self.ui.pushButton_delete.clicked.connect(lambda _: setupFunctional.delete_record_ref(self.ui.tableWidget_table,self.ui.comboBox_tables.currentText()))
+        self.ui.pushButton_add.clicked.connect(lambda _: setupFunctional.create_record_ref(self.ui.tableWidget_table, self.ui.comboBox_tables.currentText()))
+        self.ui.pushButton_delete.clicked.connect(lambda _: setupFunctional.delete_record_ref(self.ui.tableWidget_table, self.ui.comboBox_tables.currentText()))
         self.ui.pushButton_update.clicked.connect(lambda _: setupFunctional.update_records_ref(self.ui.tableWidget_table, self.ui.comboBox_tables.currentText()))
         self.ui.pushButton_filter.clicked.connect(lambda _: setupFunctional.fill_table(self.ui.tableWidget_table, self.ui.comboBox_tables.currentText(), True))
 

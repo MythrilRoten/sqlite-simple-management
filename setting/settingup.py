@@ -27,17 +27,17 @@ class Settingup():
         self.setup_names_of_tables(widget)
 
     @staticmethod
-    def get_data_record(table_widget: QTableWidget) -> dict:
+    def get_data_record(table_widget: QTableWidget, row: int) -> dict:
         """Get dict data from current row in table widget
 
         Args:
             table_widget (QTableWidget): table where locate records, and select a cell
+            row (int): row of record in table widget
 
         Returns:
             dict: full info of record
         """
         data = dict()
-        row = table_widget.currentRow()
         for column in range(table_widget.columnCount()):
             data[table_widget.horizontalHeaderItem(column).text()] = table_widget.item(row, column).text()
         return data
@@ -149,12 +149,23 @@ class Settingup():
         header_of_table = [i[1] for i in db.info[table]['table_info']]
         rows = len(content_of_db_table)
         
+        print(db.get_last_pk(table))
+        
         self._ui_qtablewidget(table_widget, header_of_table, rows, columns)
 
+        
         # Filling table_widget
         for row, record in enumerate(content_of_db_table):
             for column, field in enumerate(record):
                 item = QTableWidgetItem(str(field))
+                if table_widget.horizontalHeaderItem(column).text() == db.get_pk(db.info, table): # ReadOnly Pk
+                    item.setFlags(Qt.ItemIsEnabled)
+                    
+                    if table_widget.item(1, column) is None:
+                        last_pk = QTableWidgetItem(str(db.get_last_pk(table)+1))
+                        last_pk.setFlags(Qt.ItemIsEnabled)
+                        table_widget.setItem(1, column, last_pk)
+                        
                 table_widget.setItem(row + SYSTEM_ROWS, column, item)
 
         # Clear size recent table and resize
@@ -171,35 +182,45 @@ class Settingup():
             for column in range(table_widget.columnCount()):
                 item = table_widget.item(row, column).text() if table_widget.item(row, column) != None else ''
                 name_column = table_widget.horizontalHeaderItem(column).text()
-                # type_of_value = db.info[table]['table_info'][column][2]
-                # if type_of_value in ["INT", "INTEGER"]:
-                #     item = int(item)
-                # # if type_of_value in ["DATE"]:
-                # #     item = datetime(item)
-                # if type_of_value in ["REAL", "DOUBLE", "DOUBLE PRECISION", "FLOAT"]:
-                #     item = float(item)
+                # If trouble with type
+                type_of_value = db.info[table]['table_info'][column][2]
+                if type_of_value in ["INT", "INTEGER"]:
+                    item = int(item)
+                if type_of_value in ["REAL", "DOUBLE", "DOUBLE PRECISION", "FLOAT"]:
+                    item = float(item)
                 temp[name_column] = item
             data.append(temp)
         return data
 
     def delete_record_ref(self, table_widget: QTableWidget, table: str) -> None:
-        """Contain a reference to function in database class and fill table after sql operation
+        """Contain a reference to delete function in database class and fill table after sql operation
 
         Args:
-            table (str): where delete record
-            record (dict): record's fields
+            table_widget (QTableWidget): from which widget get record to delete
+            table (str): name of table
         """
-        record = self.get_data_record(table_widget)
+        record = self.get_data_record(table_widget, table_widget.currentRow())
         db.delete_record(table, record)
+        self.fill_table(table_widget, table)
+       
+    def create_record_ref(self, table_widget: QTableWidget, table: str) -> None:
+        """Contain a reference to create function in database class and fill table after sql operation
+
+        Args:
+            table_widget (QTableWidget): from which widget get record to create
+            table (str): name of table
+        """
+        record = self.get_data_record(table_widget, 1) # Second row of creation
+        db.create_record(table, record)
         self.fill_table(table_widget, table)
         
     def update_records_ref(self, table_widget: QTableWidget, table: str) -> None:
-        """Contain a reference to function in database class and fill table after sql operation
+        """Contain a reference to update function in database class and fill table after sql operation
 
         Args:
-            table (str): where delete record
-            record (dict): record's fields
+            table_widget (QTableWidget): from which widget get record to update
+            table (str): name of table
         """
-        data = self.get_data_table(table_widget, table)
-        db.update_records(table, data)
+        records = self.get_data_table(table_widget, table)
+        db.update_records(table, records)
         self.fill_table(table_widget, table)

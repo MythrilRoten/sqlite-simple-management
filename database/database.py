@@ -13,7 +13,6 @@ class DataBase():
         self.cursor = self.connection.cursor()
         self.name_of_tables = [i[0] for i in self.cursor.execute( "SELECT name FROM sqlite_master WHERE type='table';").fetchall()]
         self.info = self.get_info_of_database(self.cursor, self.name_of_tables)
-        print(self.info)
 
     @staticmethod
     def get_info_of_database(cursor: sqlite3.Cursor, name_of_tables: Sequence[str]) -> dict:
@@ -56,7 +55,20 @@ class DataBase():
         return self.content
 
 
-    def get_pk(self, full_table_info: dict, table: str) -> str:
+    def get_last_pk(self, table: str) -> int:
+        """Return last pk number of current table 
+
+        Args:
+            table (str): name of table
+
+        Returns:
+            int: pk
+        """
+        last_num_pk = self.connection.execute(f"SELECT {self.get_pk(self.info, table)} FROM {table} ORDER BY id DESC LIMIT 1").fetchone()[0]
+        return last_num_pk
+    
+    @staticmethod
+    def get_pk(full_table_info: dict, table: str) -> str:
         """Return name of PK field in current table
 
         Args:
@@ -101,9 +113,19 @@ class DataBase():
                     continue
                 query += f"""{key} = "{dict_record[key]}", """ if keys_record.index(key) != len(keys_record) - 1 else f"""{key} = "{dict_record[key]}" """
             query += f"WHERE {name_field} = {dict_record[name_field]}"
+            
             self.cursor.execute(query)
             self.connection.commit()
 
+    def create_record(self, table: str, record_data: dict) -> None:
+        fields_arr = [*record_data]
+        fields_str = ", ".join(fields_arr)
+        value_arr = [f"\"{record_data[field]}\"" for field in fields_arr]
+        value_str = ", ".join(value_arr)
+        query = f"INSERT INTO {table} ({fields_str}) VALUES ({value_str})"
+        print(query)
+        self.cursor.execute(query)
+        self.connection.commit()
 
     def __del__(self):
         self.connection.close()
