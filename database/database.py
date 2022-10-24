@@ -13,6 +13,7 @@ class DataBase():
         self.cursor = self.connection.cursor()
         self.name_of_tables = [i[0] for i in self.cursor.execute( "SELECT name FROM sqlite_master WHERE type='table';").fetchall()]
         self.info = self.get_info_of_database(self.cursor, self.name_of_tables)
+        print(self.info)
 
     @staticmethod
     def get_info_of_database(cursor: sqlite3.Cursor, name_of_tables: Sequence[str]) -> dict:
@@ -48,29 +49,61 @@ class DataBase():
             list: list of tuples of records of table
         """
         if query is None and query != ' ': # BUG sqlite3.OperationalError: incomplete input after open another bd
-            print(f'SELECT * FROM {table}')
             self.content = self.cursor.execute(f'SELECT * FROM {table}').fetchall()
         if query is not None:
-            print(f'SELECT * FROM {table} WHERE {query}')
             self.content = self.cursor.execute(f'SELECT * FROM {table} WHERE {query}').fetchall()
 
         return self.content
 
-    def delete_record(self, table: str, record: dict) -> bool:
+
+    def get_pk(self, full_table_info: dict, table: str) -> str:
+        """Return name of PK field in current table
+
+        Args:
+            full_table_info (dict): table_info + foreign_key_list or call function get_info_of_database
+            table (str): name of table
+
+        Returns:
+            str: name of pk field
+        """
+        for tuple_info in full_table_info[table]['table_info']:
+            if tuple_info[-1] == 1: # If pk == True
+                name_field = tuple_info[1]
+                return name_field
+
+
+    def delete_record(self, table: str, record: dict) -> None:
         """Delete record in opened database
 
         Args:
             table (str): where delete record
             record (dict): record's fields
-
-        Returns:
-            bool: status execution
         """
-        for tuple_info in self.info[table]['table_info']:
-            if tuple_info[-1] == 1: # If pk == True
-                name_field = tuple_info[1]
+
+        name_field = self.get_pk(self.info, table)
         self.cursor.execute(f"DELETE FROM {table} WHERE {name_field}={record[name_field]}")
         self.connection.commit()
+        
+    def update_records(self, table: str, records_data: Sequence[dict]) -> None:
+        """Update all records in opened database
+
+        Args:
+            table (str): where need to update records
+            records_data (dict): list which contain all records in table widget
+        """
+        name_field = self.get_pk(self.info, table)
+        
+        for dict_record in records_data:
+            query = f"UPDATE {table} SET "
+            keys_record = list(dict_record.keys())
+            for key in keys_record:
+                if key == name_field:
+                    continue
+                query += f"""{key} = "{dict_record[key]}", """ if keys_record.index(key) != len(keys_record) - 1 else f"""{key} = "{dict_record[key]}" """
+            query += f"WHERE {name_field} = {dict_record[name_field]}"
+            self.cursor.execute(query)
+            self.connection.commit()
+
 
     def __del__(self):
         self.connection.close()

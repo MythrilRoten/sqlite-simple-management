@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'mainwindow.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.3.2
+## Created by: Qt User Interface Compiler version 6.3.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -16,16 +16,16 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QIcon, QImage, QKeySequence, QLinearGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
-from PySide6.QtWidgets import (QApplication, QComboBox, QGridLayout, QHBoxLayout,
-    QHeaderView, QMainWindow, QMenu, QMenuBar,
-    QPushButton, QSizePolicy, QStatusBar, QTableWidget,
-    QTableWidgetItem, QWidget)
+from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QGridLayout,
+    QHBoxLayout, QHeaderView, QMainWindow, QMenu,
+    QMenuBar, QPushButton, QSizePolicy, QStatusBar,
+    QTableWidget, QTableWidgetItem, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(793, 571)
+        MainWindow.resize(768, 539)
         self.action_about = QAction(MainWindow)
         self.action_about.setObjectName(u"action_about")
         self.action_instructions = QAction(MainWindow)
@@ -49,6 +49,19 @@ class Ui_MainWindow(object):
         self.pushButton_view.setMinimumSize(QSize(100, 0))
 
         self.horizontalLayout.addWidget(self.pushButton_view)
+
+        self.pushButton_update = QPushButton(self.centralwidget)
+        self.pushButton_update.setObjectName(u"pushButton_update")
+        self.pushButton_update.setMinimumSize(QSize(100, 0))
+
+        self.horizontalLayout.addWidget(self.pushButton_update)
+
+        self.line = QFrame(self.centralwidget)
+        self.line.setObjectName(u"line")
+        self.line.setFrameShape(QFrame.VLine)
+        self.line.setFrameShadow(QFrame.Sunken)
+
+        self.horizontalLayout.addWidget(self.line)
 
         self.pushButton_add = QPushButton(self.centralwidget)
         self.pushButton_add.setObjectName(u"pushButton_add")
@@ -89,7 +102,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 793, 22))
+        self.menubar.setGeometry(QRect(0, 0, 768, 22))
         self.menu = QMenu(self.menubar)
         self.menu.setObjectName(u"menu")
         self.menuFunction = QMenu(self.menubar)
@@ -116,6 +129,7 @@ class Ui_MainWindow(object):
         self.action_instructions.setText(QCoreApplication.translate("MainWindow", u"Instructions", None))
         self.action_opendatabase.setText(QCoreApplication.translate("MainWindow", u"Open database", None))
         self.pushButton_view.setText(QCoreApplication.translate("MainWindow", u"View", None))
+        self.pushButton_update.setText(QCoreApplication.translate("MainWindow", u"Update All", None))
         self.pushButton_add.setText(QCoreApplication.translate("MainWindow", u"Add", None))
         self.pushButton_filter.setText(QCoreApplication.translate("MainWindow", u"Filter", None))
         self.pushButton_delete.setText(QCoreApplication.translate("MainWindow", u"Delete", None))
