@@ -143,8 +143,6 @@ class Settingup():
         if content_of_db_table != []:
             ...
 
-
-     
         self.clear_table_widget(table_widget)
         
         self._ui_qtablewidget(table_widget, header_of_table, rows, columns)
@@ -161,6 +159,10 @@ class Settingup():
                         last_pk.setFlags(Qt.ItemIsEnabled)
                         table_widget.setItem(1, column, last_pk)
                     #########
+                else:
+                    for foreign_key_tuple in db.info[table]['foreign_keys']:
+                        if table_widget.horizontalHeaderItem(column).text() == foreign_key_tuple[3]:
+                            item.setBackground(QColor(255, 128, 128))
                 table_widget.setItem(row + SYSTEM_ROWS, column, item)
 
         # Clear size recent table and resize
@@ -168,8 +170,8 @@ class Settingup():
         table_widget.resizeColumnsToContents()
         table_widget.horizontalHeader().setStretchLastSection(True)
 
-    @staticmethod
-    def get_data_record(table_widget: QTableWidget, row: int = None) -> dict:
+
+    def get_data_record(self, table_widget: QTableWidget, table: str, row: int = None) -> dict | bool:
         """Get dict data from current row in table widget
 
         Args:
@@ -185,11 +187,31 @@ class Settingup():
             row = table_widget.currentRow()
             
         for column in range(table_widget.columnCount()):
-            data[table_widget.horizontalHeaderItem(column).text()] = table_widget.item(row, column).text()
+            try: data[table_widget.horizontalHeaderItem(column).text()] = table_widget.item(row, column).text()
+            except: return 0
+        
+        for index, key in enumerate(list(data.keys())):
+            ###### put it in another function 
+            type_of_value = db.info[table]['table_info'][index][2]
+            item = data[key]
+            try:
+                if type_of_value in ["INT", "INTEGER"]:
+                    item = int(item)
+                if type_of_value in ["REAL", "DOUBLE", "DOUBLE PRECISION", "FLOAT"]:
+                    item = float(item)
+                if type_of_value in ["DATE"]:
+                    item = datetime.strptime(item, '%Y-%m-%d')
+                else:
+                    item = str(item)
+            except:
+                return 0
+            ###### put it in another function 
+
         return data
 
     def get_data_table_foreign_keys(self, table_widget: QTableWidget, table: str) -> Sequence[dict]:
-        ...
+        
+        data = self.get_data_table(table_widget, table)
 
     def get_data_table(self, table_widget: QTableWidget, table: str) -> Sequence[dict] | bool:
         """Return list of dict of table_widget values like [{field: value, ...}, {...}]
@@ -207,7 +229,7 @@ class Settingup():
             for column in range(table_widget.columnCount()):
                 item = table_widget.item(row, column).text() if table_widget.item(row, column) != None else ''
                 name_column = table_widget.horizontalHeaderItem(column).text()
-                # If trouble with type
+                ###### put it in another function 
                 type_of_value = db.info[table]['table_info'][column][2]
                 try:
                     if type_of_value in ["INT", "INTEGER"]:
@@ -216,12 +238,15 @@ class Settingup():
                         item = float(item)
                     if type_of_value in ["DATE"]:
                         item = datetime.strptime(item, '%Y-%m-%d')
+                    else:
+                        item = str(item)
                 except:
                     return 0
-                # 
+                ###### put it in another function 
                 temp[name_column] = item
             data.append(temp)
         return data
+
 
     def delete_record_ref(self, table_widget: QTableWidget, table: str) -> QMessageBox:
         """Contain a reference to delete function in database class and fill table after sql operation
@@ -237,13 +262,16 @@ class Settingup():
         if table_widget.currentRow() in (0, 1):
             return QMessageBox.information(None, "Information", "You can't delete system row")
 
-        
-        record = self.get_data_record(table_widget)
+        if type(self.get_data_record(table_widget, table)) != dict:
+            self.fill_table(table_widget, table)
+            return QMessageBox.information(None, "Information", "Invalid data")
+        else:
+            record = self.get_data_record(table_widget, table)
+
         if db.delete_record(table, record):
             self.fill_table(table_widget, table)
             return QMessageBox.information(None, "Information", "The operation was successful")
         else:
-            self.clear_table_widget(table_widget)
             self.fill_table(table_widget, table)
             return QMessageBox.information(None, "Information", "The operation was denied")
         
@@ -257,18 +285,16 @@ class Settingup():
         Returns:
             QMessageBox: status execution
         """
-        if type(self.get_data_record(table_widget, 1)) != dict:
-            self.clear_table_widget(table_widget)
+        if type(self.get_data_record(table_widget, table, 1)) != dict:
             self.fill_table(table_widget, table)
             return QMessageBox.information(None, "Information", "Invalid data")
         else:
-            record = self.get_data_record(table_widget, 1) # Second row of creation
+            record = self.get_data_record(table_widget, table, 1) # Second row of creation
         
         if db.create_record(table, record):
             self.fill_table(table_widget, table)
             return QMessageBox.information(None, "Information", "The operation was successful")
         else:
-            self.clear_table_widget(table_widget)
             self.fill_table(table_widget, table)
             return QMessageBox.information(None, "Information", "The operation was denied")
         
@@ -284,8 +310,7 @@ class Settingup():
         if table_widget.rowCount() == 2: # If table empty, only system rows
             return QMessageBox.information(None, "Information", "There are nothing to update")
         
-        if self.get_data_table(table_widget, table) != dict:
-            self.clear_table_widget(table_widget)
+        if type(self.get_data_table(table_widget, table)) != list:
             self.fill_table(table_widget, table)
             return QMessageBox.information(None, "Information", "Invalid data")
         else:
@@ -295,6 +320,5 @@ class Settingup():
             self.fill_table(table_widget, table)
             return QMessageBox.information(None, "Information", "The operation was successful")
         else:
-            self.clear_table_widget(table_widget)
             self.fill_table(table_widget, table)
             return QMessageBox.information(None, "Information", "The operation was denied")
