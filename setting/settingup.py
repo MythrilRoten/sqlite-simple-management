@@ -1,4 +1,5 @@
 from datetime import datetime
+from pathlib import Path
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
                             QMetaObject, QObject, QPoint, QRect,
                             QSize, QTime, QUrl, Qt, Slot)
@@ -13,10 +14,13 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QGridLayout, QHBoxLayout
                                QTableWidgetItem, QWidget, QLineEdit, QAbstractItemView,
                                QMessageBox)
 from typing import Sequence
+import os
+from docxtpl import DocxTemplate
 
 from database.database import DataBase
 
 SYSTEM_ROWS = 2
+BASE_DIR = Path(__file__).parent.parent
 
 class Settingup():
     
@@ -150,7 +154,7 @@ class Settingup():
         # Filling table_widget
         for row, record in enumerate(content_of_db_table):
             for column, field in enumerate(record):
-                item = QTableWidgetItem(str(field))
+                item = QTableWidgetItem(str(field).replace('"',"'"))
                 if table_widget.horizontalHeaderItem(column).text() == db.get_pk(db.info, table): # ReadOnly Pk
                     item.setFlags(Qt.ItemIsEnabled)
                     # Insert in add row a new pk id
@@ -200,12 +204,13 @@ class Settingup():
                 if type_of_value in ["REAL", "DOUBLE", "DOUBLE PRECISION", "FLOAT"]:
                     item = float(item)
                 if type_of_value in ["DATE"]:
-                    item = datetime.strptime(item, '%Y-%m-%d')
+                    item = datetime.strptime(item, '%Y-%m-%d').date()
+                    print(item)
                 else:
                     item = str(item)
             except:
                 return 0
-            ###### put it in another function 
+            ##### put it in another function 
 
         return data
 
@@ -237,7 +242,7 @@ class Settingup():
                     if type_of_value in ["REAL", "DOUBLE", "DOUBLE PRECISION", "FLOAT"]:
                         item = float(item)
                     if type_of_value in ["DATE"]:
-                        item = datetime.strptime(item, '%Y-%m-%d')
+                        item = datetime.strptime(item, '%Y-%m-%d').date()
                     else:
                         item = str(item)
                 except:
@@ -261,7 +266,7 @@ class Settingup():
         # If selected row is "query" or "add"
         if table_widget.currentRow() in (0, 1):
             return QMessageBox.information(None, "Information", "You can't delete system row")
-
+        print(self.get_data_record(table_widget, table))
         if type(self.get_data_record(table_widget, table)) != dict:
             self.fill_table(table_widget, table)
             return QMessageBox.information(None, "Information", "Invalid data")
@@ -323,5 +328,24 @@ class Settingup():
             self.fill_table(table_widget, table)
             return QMessageBox.information(None, "Information", "The operation was denied")
 
-    def report_records(self):
-        ...
+    def create_report_records(self, table_widget: QTableWidget, table: str):
+        document = DocxTemplate(rf"{os.path.join(BASE_DIR, 'forms', 'template', 'template.docx')}")
+        template_values = dict()
+        
+        if type(self.get_data_table(table_widget, table)) != list:
+            self.fill_table(table_widget, table)
+            return QMessageBox.information(None, "Information", "Invalid data")
+        else:
+            content = self.get_data_table(table_widget, table)
+        
+        content_list = list()
+        for record in content:
+            temp = [str(value) for key, value in record.items()]
+            content_list.append(temp)
+        print(content_list)
+        template_values["Date"] = QDate.currentDate().toString('yyyy-MM-dd')
+        template_values["content"] = content_list 
+        template_values["header"] = [table_widget.horizontalHeaderItem(column).text() for column in range(table_widget.columnCount())]
+        document.render(template_values)
+        document.save(rf'{BASE_DIR}\output.docx')
+        os.startfile(rf'{BASE_DIR}\output.docx')

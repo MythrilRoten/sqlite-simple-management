@@ -3,8 +3,10 @@ import sys
 from typing import Sequence
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QTableWidget, QDateEdit, QMessageBox, QFileDialog)
-from forms.mainwindow.ui_mainwindow import Ui_MainWindow
+from PySide6.QtGui import QIcon
+import os
 
+from forms.mainwindow.ui_mainwindow import Ui_MainWindow
 from setting.settingup import Settingup, SYSTEM_ROWS
 
 BASE_DIR = Path(__file__).parent
@@ -15,6 +17,8 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self.setWindowIcon(QIcon(os.path.join(BASE_DIR, 'data', 'database.svg')))
+        self.setWindowTitle("Database Management")
 
         self.ui.action_opendatabase.triggered.connect(self.open_db_file)
         self.ui.comboBox_tables.currentTextChanged.connect(lambda name_of_table: setupFunctional.fill_table(self.ui.tableWidget_table, name_of_table))
@@ -22,9 +26,7 @@ class MainWindow(QMainWindow):
         self.ui.pushButton_delete.clicked.connect(lambda _: setupFunctional.delete_record_ref(self.ui.tableWidget_table, self.ui.comboBox_tables.currentText()))
         self.ui.pushButton_update.clicked.connect(lambda _: setupFunctional.update_records_ref(self.ui.tableWidget_table, self.ui.comboBox_tables.currentText()))
         self.ui.pushButton_filter.clicked.connect(lambda _: setupFunctional.fill_table(self.ui.tableWidget_table, self.ui.comboBox_tables.currentText(), True))
-        ###########################
-        self.ui.pushButton_report.clicked.connect(lambda _: None) 
-        ###########################
+        self.ui.pushButton_report.clicked.connect(lambda _: setupFunctional.create_report_records(self.ui.tableWidget_table, self.ui.comboBox_tables.currentText()))
 
     def open_db_file(self) -> None | QMessageBox:
         """Trigger function to open file dialog and validate it
@@ -40,7 +42,7 @@ class MainWindow(QMainWindow):
             Settingup.clear_combobox_widget(self.ui.comboBox_tables)
             Settingup.clear_table_widget(self.ui.tableWidget_table)
             return QMessageBox.information(self, "Information", "Incorrect database's path")
-
+        Settingup.clear_table_widget(self.ui.tableWidget_table)
         setupFunctional = Settingup(self.ui.comboBox_tables, path_to_bd)
 
 

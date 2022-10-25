@@ -97,7 +97,7 @@ class DataBase():
         """
 
         name_field = self.get_pk(self.info, table)
-        query = f"DELETE FROM {table} WHERE {name_field}={record[name_field]}" ## ??????????????????????????????????????????
+        query = f"DELETE FROM {table} WHERE {name_field}={record[name_field]}"
         try: self.cursor.execute(query)
         except: return False
         self.connection.commit()
@@ -115,16 +115,16 @@ class DataBase():
         name_field = self.get_pk(self.info, table)
         
         for dict_record in records_data:
-            query = f"UPDATE {table} SET "
+            query = f"""UPDATE {table} SET """
             keys_record = list(dict_record.keys())
             for key in keys_record:
                 if key == name_field:
                     continue
                 query += f"""{key} = "{dict_record[key]}", """ if keys_record.index(key) != len(keys_record) - 1 else f"""{key} = "{dict_record[key]}" """
-            query += f"WHERE {name_field} = {dict_record[name_field]}"
-            
-            try: self.cursor.execute(query)
-            except: return False
+            query += f"""WHERE {name_field} = {dict_record[name_field]}"""
+            print(query)
+            self.cursor.execute(query)
+            # except: return False
             self.connection.commit()
         return True
 
