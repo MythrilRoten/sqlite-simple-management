@@ -1,6 +1,7 @@
 import os
 import sqlite3
 from pathlib import Path
+from types import NoneType
 from typing import Sequence
 
 
@@ -11,6 +12,7 @@ class DataBase():
     def __init__(self, path: str) -> None:
         self.connection = sqlite3.connect(path)
         self.cursor = self.connection.cursor()
+        self.connection.execute("PRAGMA foreign_keys = True")
         self.name_of_tables = [i[0] for i in self.cursor.execute( "SELECT name FROM sqlite_master WHERE type='table';").fetchall()]
         self.info = self.get_info_of_database(self.cursor, self.name_of_tables)
 
@@ -51,7 +53,6 @@ class DataBase():
             self.content = self.cursor.execute(f'SELECT * FROM {table}').fetchall()
         if query is not None:
             self.content = self.cursor.execute(f'SELECT * FROM {table} WHERE {query}').fetchall()
-
         return self.content
 
 
@@ -64,7 +65,9 @@ class DataBase():
         Returns:
             int: pk
         """
-        last_num_pk = self.connection.execute(f"SELECT {self.get_pk(self.info, table)} FROM {table} ORDER BY id DESC LIMIT 1").fetchone()[0]
+        last_num_pk = self.connection.execute(f"SELECT {self.get_pk(self.info, table)} FROM {table} ORDER BY {self.get_pk(self.info, table)} DESC LIMIT 1").fetchone()
+        print(last_num_pk, type(last_num_pk))
+        last_num_pk = 0 if last_num_pk is None else last_num_pk[0]
         return last_num_pk
     
     @staticmethod
@@ -84,17 +87,22 @@ class DataBase():
                 return name_field
 
 
-    def delete_record(self, table: str, record: dict) -> None:
+    def delete_record(self, table: str, record: dict) -> bool:
         """Delete record in opened database
 
         Args:
             table (str): where delete record
             record (dict): record's fields
+        Returns:
+            bool: status executution
         """
 
         name_field = self.get_pk(self.info, table)
-        self.cursor.execute(f"DELETE FROM {table} WHERE {name_field}={record[name_field]}")
+        query = f"DELETE FROM {table} WHERE {name_field}={record[name_field]}" ## ??????????????????????????????????????????
+        try: self.cursor.execute(query)
+        except: return False
         self.connection.commit()
+        return True
         
     def update_records(self, table: str, records_data: Sequence[dict]) -> None:
         """Update all records in opened database
@@ -102,6 +110,8 @@ class DataBase():
         Args:
             table (str): where need to update records
             records_data (dict): list which contain all records in table widget
+        Returns:
+            bool: status executution
         """
         name_field = self.get_pk(self.info, table)
         
@@ -114,8 +124,10 @@ class DataBase():
                 query += f"""{key} = "{dict_record[key]}", """ if keys_record.index(key) != len(keys_record) - 1 else f"""{key} = "{dict_record[key]}" """
             query += f"WHERE {name_field} = {dict_record[name_field]}"
             
-            self.cursor.execute(query)
+            try: self.cursor.execute(query)
+            except: return False
             self.connection.commit()
+        return True
 
     def create_record(self, table: str, record: dict) -> None:
         """Add record in opened database
@@ -123,15 +135,18 @@ class DataBase():
         Args:
             table (str): where delete record
             record (dict): record's fields
+        Returns:
+            bool: status executution
         """
         fields_arr = [*record]
         fields_str = ", ".join(fields_arr)
         value_arr = [f"\"{record[field]}\"" for field in fields_arr]
         value_str = ", ".join(value_arr)
         query = f"INSERT INTO {table} ({fields_str}) VALUES ({value_str})"
-        print(query)
-        self.cursor.execute(query)
+        try: self.cursor.execute(query)
+        except: return False
         self.connection.commit()
+        return True
 
     def __del__(self):
         self.connection.close()

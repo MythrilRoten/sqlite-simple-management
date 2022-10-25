@@ -1,4 +1,4 @@
-# SQLite Simple Management 0.8
+# SQLite Simple Management 0.9
 
 Available functions
 

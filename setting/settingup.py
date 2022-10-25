@@ -27,7 +27,7 @@ class Settingup():
         self.setup_names_of_tables(widget)
 
     @staticmethod
-    def get_data_record(table_widget: QTableWidget, row: int) -> dict:
+    def get_data_record(table_widget: QTableWidget, row: int = None) -> dict:
         """Get dict data from current row in table widget
 
         Args:
@@ -38,6 +38,10 @@ class Settingup():
             dict: full info of record
         """
         data = dict()
+        
+        if row is None:
+            row = table_widget.currentRow()
+            
         for column in range(table_widget.columnCount()):
             data[table_widget.horizontalHeaderItem(column).text()] = table_widget.item(row, column).text()
         return data
@@ -122,14 +126,8 @@ class Settingup():
         """ 
         content_of_db_table = db.get_content(table)
 
-        # If table empty
-        if content_of_db_table == []:
-            self.clear_table_widget(table_widget)
-            return QMessageBox.information(None, "Information", "There no records in selected table")
-        if content_of_db_table != []:
-            ...
-
-        columns = len(content_of_db_table[0])
+        header_of_table = [i[1] for i in db.info[table]['table_info']]
+        columns = len(header_of_table)
 
         # Replace content_of_db_table with query
         if query:
@@ -143,11 +141,30 @@ class Settingup():
                 except AttributeError: ...
             query = ' AND '.join(list_of_conditions)    
             content_of_db_table = db.get_content(table, query)
-            
-        self.clear_table_widget(table_widget)
+
         
-        header_of_table = [i[1] for i in db.info[table]['table_info']]
         rows = len(content_of_db_table)
+
+        # If table empty
+        if content_of_db_table == []:
+            self.clear_table_widget(table_widget)
+            self._ui_qtablewidget(table_widget, header_of_table, rows, columns)
+            for column in range(table_widget.columnCount()):
+                if table_widget.horizontalHeaderItem(column).text() == db.get_pk(db.info, table): # ReadOnly Pk
+                    ######## Insert in add row a new pk id
+                    if table_widget.item(1, column) is None:
+                        last_pk = QTableWidgetItem(str(db.get_last_pk(table)+1))
+                        last_pk.setFlags(Qt.ItemIsEnabled)
+                        table_widget.setItem(1, column, last_pk)
+                    #########
+            
+            return QMessageBox.information(None, "Information", "There no records in selected table")
+        if content_of_db_table != []:
+            ...
+
+
+     
+        self.clear_table_widget(table_widget)
         
         self._ui_qtablewidget(table_widget, header_of_table, rows, columns)
         
@@ -189,16 +206,30 @@ class Settingup():
             data.append(temp)
         return data
 
-    def delete_record_ref(self, table_widget: QTableWidget, table: str) -> None:
+    def delete_record_ref(self, table_widget: QTableWidget, table: str) -> QMessageBox:
         """Contain a reference to delete function in database class and fill table after sql operation
 
         Args:
             table_widget (QTableWidget): from which widget get record to delete
             table (str): name of table
+        Returns:
+            QMessageBox: status execution
         """
-        record = self.get_data_record(table_widget, table_widget.currentRow())
-        db.delete_record(table, record)
-        self.fill_table(table_widget, table)
+        
+        # If selected row is "query" or "add"
+        if table_widget.currentRow() in (0, 1):
+            return QMessageBox.information(None, "Information", "You can't delete system row")
+
+        
+        record = self.get_data_record(table_widget)
+        if db.delete_record(table, record):
+            self.fill_table(table_widget, table)
+            return QMessageBox.information(None, "Information", "The operation was successful")
+        else:
+            self.clear_table_widget(table_widget)
+            self.fill_table(table_widget, table)
+            return QMessageBox.information(None, "Information", "The operation was denied")
+        
        
     def create_record_ref(self, table_widget: QTableWidget, table: str) -> None:
         """Contain a reference to create function in database class and fill table after sql operation
@@ -206,10 +237,17 @@ class Settingup():
         Args:
             table_widget (QTableWidget): from which widget get record to create
             table (str): name of table
+        Returns:
+            QMessageBox: status execution
         """
         record = self.get_data_record(table_widget, 1) # Second row of creation
-        db.create_record(table, record)
-        self.fill_table(table_widget, table)
+        if db.create_record(table, record):
+            self.fill_table(table_widget, table)
+            return QMessageBox.information(None, "Information", "The operation was successful")
+        else:
+            self.clear_table_widget(table_widget)
+            self.fill_table(table_widget, table)
+            return QMessageBox.information(None, "Information", "The operation was denied")
         
     def update_records_ref(self, table_widget: QTableWidget, table: str) -> None:
         """Contain a reference to update function in database class and fill table after sql operation
@@ -217,7 +255,17 @@ class Settingup():
         Args:
             table_widget (QTableWidget): from which widget get record to update
             table (str): name of table
+        Returns:
+            QMessageBox: status execution
         """
+        if table_widget.rowCount() == 2: # If table empty, only system rows
+            return QMessageBox.information(None, "Information", "There are nothing to update")
+        
         records = self.get_data_table(table_widget, table)
-        db.update_records(table, records)
-        self.fill_table(table_widget, table)
+        if db.update_records(table, records):
+            self.fill_table(table_widget, table)
+            return QMessageBox.information(None, "Information", "The operation was successful")
+        else:
+            self.clear_table_widget(table_widget)
+            self.fill_table(table_widget, table)
+            return QMessageBox.information(None, "Information", "The operation was denied")
