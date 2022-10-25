@@ -15,3 +15,4 @@ Future changes
 2. Button View
 3. Option "with foreign keys" or "with not foreign keys" report
 4. Make json file with default field values ​​so user can interact with combobox
+5. More options in query
