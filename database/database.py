@@ -66,7 +66,6 @@ class DataBase():
             int: pk
         """
         last_num_pk = self.connection.execute(f"SELECT {self.get_pk(self.info, table)} FROM {table} ORDER BY {self.get_pk(self.info, table)} DESC LIMIT 1").fetchone()
-        print(last_num_pk, type(last_num_pk))
         last_num_pk = 0 if last_num_pk is None else last_num_pk[0]
         return last_num_pk
     
@@ -98,8 +97,6 @@ class DataBase():
         """
 
         name_field = self.get_pk(self.info, table)
-        print(record)
-        print(f"DELETE FROM {table} WHERE {name_field}={record[name_field]}")
         query = f"DELETE FROM {table} WHERE {name_field}={record[name_field]}" ## ??????????????????????????????????????????
         try: self.cursor.execute(query)
         except: return False

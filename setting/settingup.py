@@ -153,12 +153,12 @@ class Settingup():
                 item = QTableWidgetItem(str(field))
                 if table_widget.horizontalHeaderItem(column).text() == db.get_pk(db.info, table): # ReadOnly Pk
                     item.setFlags(Qt.ItemIsEnabled)
-                    ######## Insert in add row a new pk id
+                    # Insert in add row a new pk id
                     if table_widget.item(1, column) is None:
                         last_pk = QTableWidgetItem(str(db.get_last_pk(table)+1))
                         last_pk.setFlags(Qt.ItemIsEnabled)
                         table_widget.setItem(1, column, last_pk)
-                    #########
+                # recolor foreign keys
                 else:
                     for foreign_key_tuple in db.info[table]['foreign_keys']:
                         if table_widget.horizontalHeaderItem(column).text() == foreign_key_tuple[3]:
@@ -210,7 +210,7 @@ class Settingup():
         return data
 
     def get_data_table_foreign_keys(self, table_widget: QTableWidget, table: str) -> Sequence[dict]:
-        
+        # FUTURE
         data = self.get_data_table(table_widget, table)
 
     def get_data_table(self, table_widget: QTableWidget, table: str) -> Sequence[dict] | bool:
@@ -322,3 +322,6 @@ class Settingup():
         else:
             self.fill_table(table_widget, table)
             return QMessageBox.information(None, "Information", "The operation was denied")
+
+    def report_records(self):
+        ...
