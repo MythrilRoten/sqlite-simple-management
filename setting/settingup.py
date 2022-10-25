@@ -26,25 +26,7 @@ class Settingup():
         db = DataBase(path)
         self.setup_names_of_tables(widget)
 
-    @staticmethod
-    def get_data_record(table_widget: QTableWidget, row: int = None) -> dict:
-        """Get dict data from current row in table widget
 
-        Args:
-            table_widget (QTableWidget): table where locate records, and select a cell
-            row (int): row of record in table widget
-
-        Returns:
-            dict: full info of record
-        """
-        data = dict()
-        
-        if row is None:
-            row = table_widget.currentRow()
-            
-        for column in range(table_widget.columnCount()):
-            data[table_widget.horizontalHeaderItem(column).text()] = table_widget.item(row, column).text()
-        return data
 
     @staticmethod
     def _ui_combobox(combo_widget: QComboBox) -> None:
@@ -157,7 +139,6 @@ class Settingup():
                         last_pk.setFlags(Qt.ItemIsEnabled)
                         table_widget.setItem(1, column, last_pk)
                     #########
-            
             return QMessageBox.information(None, "Information", "There no records in selected table")
         if content_of_db_table != []:
             ...
@@ -187,9 +168,39 @@ class Settingup():
         table_widget.resizeColumnsToContents()
         table_widget.horizontalHeader().setStretchLastSection(True)
 
+    @staticmethod
+    def get_data_record(table_widget: QTableWidget, row: int = None) -> dict:
+        """Get dict data from current row in table widget
 
-    def get_data_table(self, table_widget: QTableWidget, table: str) -> Sequence[dict]:
-        # add docstring
+        Args:
+            table_widget (QTableWidget): table where locate records, and select a cell
+            row (int): row of record in table widget
+
+        Returns:
+            dict: full info of record
+        """
+        data = dict()
+        
+        if row is None:
+            row = table_widget.currentRow()
+            
+        for column in range(table_widget.columnCount()):
+            data[table_widget.horizontalHeaderItem(column).text()] = table_widget.item(row, column).text()
+        return data
+
+    def get_data_table_foreign_keys(self, table_widget: QTableWidget, table: str) -> Sequence[dict]:
+        ...
+
+    def get_data_table(self, table_widget: QTableWidget, table: str) -> Sequence[dict] | bool:
+        """Return list of dict of table_widget values like [{field: value, ...}, {...}]
+
+        Args:
+            table_widget (QTableWidget): from which table widget take data
+            table (str): name of table current db's table
+
+        Returns:
+            Sequence[dict]: data of table widget
+        """
         data = list()
         for row in range(SYSTEM_ROWS, table_widget.rowCount()):
             temp = dict()
@@ -198,10 +209,16 @@ class Settingup():
                 name_column = table_widget.horizontalHeaderItem(column).text()
                 # If trouble with type
                 type_of_value = db.info[table]['table_info'][column][2]
-                if type_of_value in ["INT", "INTEGER"]:
-                    item = int(item)
-                if type_of_value in ["REAL", "DOUBLE", "DOUBLE PRECISION", "FLOAT"]:
-                    item = float(item)
+                try:
+                    if type_of_value in ["INT", "INTEGER"]:
+                        item = int(item)
+                    if type_of_value in ["REAL", "DOUBLE", "DOUBLE PRECISION", "FLOAT"]:
+                        item = float(item)
+                    if type_of_value in ["DATE"]:
+                        item = datetime.strptime(item, '%Y-%m-%d')
+                except:
+                    return 0
+                # 
                 temp[name_column] = item
             data.append(temp)
         return data
@@ -240,7 +257,13 @@ class Settingup():
         Returns:
             QMessageBox: status execution
         """
-        record = self.get_data_record(table_widget, 1) # Second row of creation
+        if type(self.get_data_record(table_widget, 1)) != dict:
+            self.clear_table_widget(table_widget)
+            self.fill_table(table_widget, table)
+            return QMessageBox.information(None, "Information", "Invalid data")
+        else:
+            record = self.get_data_record(table_widget, 1) # Second row of creation
+        
         if db.create_record(table, record):
             self.fill_table(table_widget, table)
             return QMessageBox.information(None, "Information", "The operation was successful")
@@ -261,7 +284,13 @@ class Settingup():
         if table_widget.rowCount() == 2: # If table empty, only system rows
             return QMessageBox.information(None, "Information", "There are nothing to update")
         
-        records = self.get_data_table(table_widget, table)
+        if self.get_data_table(table_widget, table) != dict:
+            self.clear_table_widget(table_widget)
+            self.fill_table(table_widget, table)
+            return QMessageBox.information(None, "Information", "Invalid data")
+        else:
+            records = self.get_data_table(table_widget, table)
+            
         if db.update_records(table, records):
             self.fill_table(table_widget, table)
             return QMessageBox.information(None, "Information", "The operation was successful")

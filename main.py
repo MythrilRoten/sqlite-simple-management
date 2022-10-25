@@ -22,7 +22,9 @@ class MainWindow(QMainWindow):
         self.ui.pushButton_delete.clicked.connect(lambda _: setupFunctional.delete_record_ref(self.ui.tableWidget_table, self.ui.comboBox_tables.currentText()))
         self.ui.pushButton_update.clicked.connect(lambda _: setupFunctional.update_records_ref(self.ui.tableWidget_table, self.ui.comboBox_tables.currentText()))
         self.ui.pushButton_filter.clicked.connect(lambda _: setupFunctional.fill_table(self.ui.tableWidget_table, self.ui.comboBox_tables.currentText(), True))
-
+        ###########################
+        self.ui.pushButton_report.clicked.connect(lambda _: None) 
+        ###########################
 
     def open_db_file(self) -> None | QMessageBox:
         """Trigger function to open file dialog and validate it

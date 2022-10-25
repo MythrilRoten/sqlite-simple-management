@@ -143,8 +143,8 @@ class DataBase():
         value_arr = [f"\"{record[field]}\"" for field in fields_arr]
         value_str = ", ".join(value_arr)
         query = f"INSERT INTO {table} ({fields_str}) VALUES ({value_str})"
-        try: self.cursor.execute(query)
-        except: return False
+        self.cursor.execute(query)
+        # except: return False
         self.connection.commit()
         return True
 
